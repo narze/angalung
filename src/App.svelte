@@ -1,38 +1,109 @@
 <script lang="ts">
-  import logo from './assets/svelte.png'
-  import Counter from './lib/Counter.svelte'
+  import logo from "./assets/svelte.png"
+  import Counter from "./lib/Counter.svelte"
+
+  import { appWindow } from "@tauri-apps/api/window"
+  import { onMount } from "svelte"
+  import { io } from "socket.io-client"
+
+  let messages = []
+  let autoread = false
+  let clicked = false
+
+  onMount(() => {
+    const socket = io("ws://localhost:8080")
+
+    socket.on("message", ({ message, username, language }) => {
+      messages = [...messages, `${username}: ${message} (${language ?? "th"})`]
+
+      if (autoread) {
+        read(message, language)
+      }
+    })
+  })
+
+  onMount(() => {
+    document
+      .getElementById("titlebar-minimize")
+      .addEventListener("click", () => appWindow.minimize())
+    document
+      .getElementById("titlebar-maximize")
+      .addEventListener("click", () => appWindow.toggleMaximize())
+    document
+      .getElementById("titlebar-close")
+      .addEventListener("click", () => appWindow.close())
+  })
+
+  function read(message: string, language: string = "th") {
+    if (!canRead) {
+      return
+    }
+
+    new Audio(
+      `https://tts-api.vercel.app/api/tts?text=${message}&lang=${language}`
+    ).play()
+  }
+
+  function canRead(message: string): boolean {
+    return message.length <= 200
+  }
 </script>
 
+<div data-tauri-drag-region class="titlebar">
+  <div class="titlebar-button" id="titlebar-minimize">
+    <img
+      src="https://api.iconify.design/mdi:window-minimize.svg"
+      alt="minimize"
+    />
+  </div>
+  <div class="titlebar-button" id="titlebar-maximize">
+    <img
+      src="https://api.iconify.design/mdi:window-maximize.svg"
+      alt="maximize"
+    />
+  </div>
+  <div class="titlebar-button" id="titlebar-close">
+    <img src="https://api.iconify.design/mdi:close.svg" alt="close" />
+  </div>
+</div>
+
 <main>
-  <img src={logo} alt="Svelte Logo" />
-  <h1>Hello Typescript!</h1>
+  <h1 class="text-3xl">ReadME</h1>
 
-  <Counter />
-
+  <p>พิมพ์ !say ตามด้วยข้อความใน Twitch</p>
   <p>
-    Visit <a href="https://svelte.dev">svelte.dev</a> to learn how to build Svelte
-    apps.
+    {#if !clicked}
+      <button on:click={() => (clicked = autoread = true)} class="btn btn-sm">
+        Click me to activate autoreading
+      </button>
+    {:else}
+      <button on:click={() => (autoread = !autoread)} class="btn btn-sm">
+        Autoread : {autoread ? "🔊" : "🔇"}
+      </button>
+    {/if}
   </p>
 
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme">SvelteKit</a> for
-    the officially supported framework, also powered by Vite!
-  </p>
+  {#each messages as message}
+    <p>
+      {message}
+      <button on:click={() => read(message)}>🔉</button>
+    </p>
+  {/each}
 </main>
 
 <style>
   :root {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-      Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   }
 
   main {
     text-align: center;
     padding: 1em;
-    margin: 0 auto;
+    margin: 2rem auto;
   }
 
-  img {
+  img.logo {
     height: 16rem;
     width: 16rem;
   }
@@ -61,5 +132,27 @@
     p {
       max-width: none;
     }
+  }
+
+  .titlebar {
+    height: 30px;
+    background: #329ea3;
+    user-select: none;
+    display: flex;
+    justify-content: flex-end;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  .titlebar-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 30px;
+    height: 30px;
+  }
+  .titlebar-button:hover {
+    background: #5bbec3;
   }
 </style>
