@@ -68,7 +68,7 @@
 </div>
 
 <main>
-  <h1 class="text-3xl">ReadME</h1>
+  <h1 class="text-3xl">AUNGALUNG</h1>
 
   <p>พิมพ์ !say ตามด้วยข้อความใน Twitch</p>
   <p>
