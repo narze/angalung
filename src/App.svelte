@@ -11,7 +11,7 @@
   let clicked = false
 
   onMount(() => {
-    const socket = io("ws://localhost:8080")
+    const socket = io("ws://streamie.narze.live")
 
     socket.on("message", ({ message, username, language }) => {
       messages = [...messages, `${username}: ${message} (${language ?? "th"})`]
